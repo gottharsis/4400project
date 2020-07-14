@@ -104,7 +104,7 @@ END //
 DELIMITER ;
 
 -- Number: I3
--- Author: yxie@
+-- Author: vvangala3
 -- Name: add_business
 DROP PROCEDURE IF EXISTS add_business;
 DELIMITER //
@@ -125,8 +125,15 @@ CREATE PROCEDURE add_business(
 )
 BEGIN
 -- Type solution below
-
--- End of solution
+    INSERT INTO Business(name, address_street, address_city, address_state, address_zip) VALUES (i_name, i_BusinessStreet, i_BusinessCity, i_BusinessState, i_BusinessZip)
+    INSERT INTO inventory(owner, address_street, address_city, address_state, address_zip) VALUES (i_name, i_InventoryStreet, i_InventoryCity, i_InventoryState, i_InventoryZip)
+    IF(i_businessType = 'Hospital') THEN
+        INSERT INTO Hospital(name, max_doctors, budget) VALUES (i_name, i_maxDoctors, i_budget)
+    END IF
+    IF (i_businessType = 'Manufacturer') THEN
+        INSERT INTO Manufacturer(name, catalog_capacity) VALUES (i_name, i_catalog_capacity)
+    END IF;
+    -- End of solution
 END //
 DELIMITER ;
 
@@ -224,7 +231,7 @@ END //
 DELIMITER ;
 
 -- Number: I6
--- Author: yxie@
+-- Author: vvangala3
 -- Name: add_user
 DROP PROCEDURE IF EXISTS add_user;
 DELIMITER //
@@ -240,15 +247,19 @@ CREATE PROCEDURE add_user(
 )
 BEGIN
 -- Type solution below
-INSERT INTO User(username, email, password, fname, lname) VALUES (i_username, i_email, i_password, i_fname, i_lname)
-IF i_userType = '%Doctor%' THEN
-    INSERT INTO 
+    INSERT INTO User(username, email, password, fname, lname) VALUES (i_username, i_email, i_password, i_fname, i_lname)
+    IF (i_userType like '%Doctor%') THEN
+        INSERT INTO  Doctor(username, hospital, manager) VALUES(i_username, i_workingHospital, null)
+    END IF
+    IF (i_userType like '%Admin%')THEN
+        INSERT INTO Administrator(username, business) VALUES (i_username, i_managingBusiness)
+    END IF;
 -- End of solution
 END //
 DELIMITER ;
 
 -- Number: I7
--- Author: klin83@
+-- Author: vvangala3
 -- Name: add_catalog_item
 DROP PROCEDURE IF EXISTS add_catalog_item;
 DELIMITER //
@@ -259,13 +270,13 @@ CREATE PROCEDURE add_catalog_item(
 )
 BEGIN
 -- Type solution below
-
+    INSERT into CatalogItem(manufacturer, product_id, price) VALUES (i_manufacturer_name, i_product_id, i_price);
 -- End of solution
 END //
 DELIMITER ;
     
 -- Number: I8
--- Author: ftsang3@
+-- Author: vvangala3
 -- Name: add_product
 DROP PROCEDURE IF EXISTS add_product;
 DELIMITER //
@@ -276,7 +287,7 @@ CREATE PROCEDURE add_product(
 )
 BEGIN
 -- Type solution below
-
+    INSERT INTO PRODUCT(id, name_color, name_type) VALUES (i_prod_id, i_color, i_name);
 -- End of solution
 END //
 DELIMITER ;
@@ -286,7 +297,7 @@ DELIMITER ;
 -- NOTE: Do not circumvent referential ON DELETE triggers by manually deleting parent rows
 
 -- Number: D1
--- Author: ty.zhang@
+-- Author: vvangala3
 -- Name: delete_product
 DROP PROCEDURE IF EXISTS delete_product;
 DELIMITER //
@@ -295,7 +306,7 @@ CREATE PROCEDURE delete_product(
 )
 BEGIN
 -- Type solution below
-
+DELETE * FROM PRODUCT where product_id = i_prod_id;
 -- End of solution
 END //
 DELIMITER ;
