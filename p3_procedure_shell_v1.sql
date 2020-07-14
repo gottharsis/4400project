@@ -312,14 +312,14 @@ END //
 DELIMITER ;
 
 -- Number: D2
--- Author: kachtani3@
+-- Author: vvangala3
 -- Name: delete_zero_inventory
 DROP PROCEDURE IF EXISTS delete_zero_inventory;
 DELIMITER //
 CREATE PROCEDURE delete_zero_inventory()
 BEGIN
 -- Type solution below
-
+DELETE * FROM Inventory where owner in (SELECT inventory_business from InventoryHasProduct GROUP BY inventory_business HAVING SUM(count) = 0);
 -- End of solution
 END //
 DELIMITER ;
@@ -340,7 +340,7 @@ END //
 DELIMITER ;
 
 -- Number: D4
--- Author: ftsang3@
+-- Author: vvangala3
 -- Name: delete_user
 DROP PROCEDURE IF EXISTS delete_user;
 DELIMITER //
@@ -349,13 +349,13 @@ CREATE PROCEDURE delete_user(
 )
 BEGIN
 -- Type solution below
-
+    DELETE * FROM User where username = i_username;
 -- End of solution
 END //
 DELIMITER ;	
 
 -- Number: D5
--- Author: klin83@
+-- Author: vvangala3
 -- Name: delete_catalog_item
 DROP PROCEDURE IF EXISTS delete_catalog_item;
 DELIMITER //
@@ -365,7 +365,7 @@ CREATE PROCEDURE delete_catalog_item(
 )
 BEGIN
 -- Type solution below
-
+    DELETE * FROM CatalogItem where (manufacturer = i_manufacturer_name AND product_id = i_product_id);
 -- End of solution
 END //
 DELIMITER ;
