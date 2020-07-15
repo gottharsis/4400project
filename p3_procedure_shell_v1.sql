@@ -374,7 +374,7 @@ DELIMITER ;
 /************** UPDATES **************/
 
 -- Number: U1
--- Author: kachtani3@
+-- Author: anene6
 -- Name: add_subtract_inventory
 DROP PROCEDURE IF EXISTS add_subtract_inventory;
 DELIMITER //
@@ -386,12 +386,50 @@ CREATE PROCEDURE add_subtract_inventory(
 BEGIN
 -- Type solution below
     
+    -- if there is no entry in the table, add one
+    if (
+        select count(*) 
+        from InventoryHasProduct 
+        where inventory_business = i_businessName
+        and product_id = i_prod_id
+    ) = 0 then 
+        if i_delta > 0 then
+            insert into InventoryHasProduct values (i_businessName, i_prod_id, i_delta)
+        end if;
+    else
+        -- there is an entry already
+        declare amt int default 0;
+        select count 
+        into amt
+        from InventoryHasProduct
+        where inventory_business = i_businessName
+        and product_id = i_prod_id;
+
+        set amt = amt + i_delta;
+        -- never have less than 0
+        if amt < 0 then
+            set amt = 0;
+        end if;
+
+        -- if the item isn't there anymore then delete the row
+        if amt = 0 then
+            delete from InventoryHasProduct 
+            where inventory_business = i_businessName 
+            and product_id = i_prod_id;
+        else
+            update InventoryHasProduct
+            set count = amt
+            where inventory_business = i_businessName 
+            and product_id = i_prod_id;
+        end if;
+    end if;
+
 -- End of solution
 END //
 DELIMITER ;
 
 -- Number: U2
--- Author: kachtani3@
+-- Author: anene6
 -- Name: move_inventory
 DROP PROCEDURE IF EXISTS move_inventory;
 DELIMITER //
@@ -402,13 +440,22 @@ CREATE PROCEDURE move_inventory(
     IN i_count INT)
 BEGIN
 -- Type solution below
-
+    -- check if supplier has enough
+    if (
+        select count
+        from InventoryHasProduct
+        where product_id = i_productId
+        and inventory_business = i_supplierName
+    ) >= i_count then
+        call add_subtract_inventory(i_productId, i_supplierName, i_count * -1);
+        call add_subtract_inventory(i_productId, i_consumerName, i_count);
+    end if;
 -- End of solution
 END //
 DELIMITER ;
 
 -- Number: U3
--- Author: ty.zhang@
+-- Author: anene6
 -- Name: rename_product_id
 DROP PROCEDURE IF EXISTS rename_product_id;
 DELIMITER //
@@ -418,13 +465,15 @@ CREATE PROCEDURE rename_product_id(
 )
 BEGIN
 -- Type solution below
-
+    update Product
+    set id = i_new_product_id
+    where id = i_product_id;
 -- End of solution
 END //
 DELIMITER ;
 
 -- Number: U4
--- Author: ty.zhang@
+-- Author: anene6
 -- Name: update_business_address
 DROP PROCEDURE IF EXISTS update_business_address;
 DELIMITER //
@@ -437,13 +486,19 @@ CREATE PROCEDURE update_business_address(
 )
 BEGIN
 -- Type solution below
-
+update Business 
+set
+    address_city = i_address_city,
+    address_street = i_address_street,
+    address_zip = i_address_zip,
+    address_state = i_address_state
+where name = i_name;
 -- End of solution
 END //
 DELIMITER ;
 
 -- Number: U5
--- Author: kachtani3@
+-- Author: anene6
 -- Name: charge_hospital
 DROP PROCEDURE IF EXISTS charge_hospital;
 DELIMITER //
@@ -452,13 +507,24 @@ CREATE PROCEDURE charge_hospital(
     IN i_amount FLOAT(2))
 BEGIN
 -- Type solution below
+declare hbudget float(2) default 0.0;
+select budget
+into hbudget
+from Hospital
+where name = i_hospital_name;
 
+set hbudget = hbudget - i_amount;
+if hbudget >= 0.0 then 
+    update Hospital
+    set budget = hbudget
+    where name = i_hospital_name;
+end if;
 -- End of solution
 END //
 DELIMITER ;
 
 -- Number: U6
--- Author: yxie@
+-- Author: anene6
 -- Name: update_business_admin
 DROP PROCEDURE IF EXISTS update_business_admin;
 DELIMITER //
@@ -468,7 +534,18 @@ CREATE PROCEDURE update_business_admin(
 )
 BEGIN
 -- Type solution below
-
+-- ensure that no business is left without an admin
+if (
+    select count(*) 
+    from Administrator
+    where business = (
+        select business from Administrator
+        where username = i_admin_username
+    )) > 1 then -- there are at least 2 administrators for this business
+        update Administrator
+        set business = i_business_name
+        where username = i_admin_username;
+    end if;
 -- End of solution
 END //
 DELIMITER ;
@@ -493,7 +570,7 @@ END //
 DELIMITER ;
 
 -- Number: U8
--- Author: ftsang3@
+-- Author: anene6
 -- Name: update_user_password
 DROP PROCEDURE IF EXISTS update_user_password;
 DELIMITER //
@@ -503,7 +580,9 @@ CREATE PROCEDURE update_user_password(
 )
 BEGIN
 -- Type solution below
-
+    update User
+    set password = SHA(i_new_password)
+    where username = i_username;
 -- End of solution
 END //
 DELIMITER ;
