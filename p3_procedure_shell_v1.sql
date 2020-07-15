@@ -247,7 +247,7 @@ CREATE PROCEDURE add_user(
 )
 BEGIN
 -- Type solution below
-    INSERT INTO User(username, email, password, fname, lname) VALUES (i_username, i_email, i_password, i_fname, i_lname)
+    INSERT INTO User(username, email, password, fname, lname) VALUES (i_username, i_email, sha(i_password), i_fname, i_lname)
     IF (i_userType like '%Doctor%') THEN
         INSERT INTO  Doctor(username, hospital, manager) VALUES(i_username, i_workingHospital, null)
     END IF
