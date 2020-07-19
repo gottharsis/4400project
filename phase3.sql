@@ -319,7 +319,7 @@ DELIMITER //
 CREATE PROCEDURE delete_zero_inventory()
 BEGIN
 -- Type solution below
-DELETE * FROM Inventory where owner in (SELECT inventory_business from InventoryHasProduct GROUP BY inventory_business HAVING SUM(count) = 0);
+DELETE FROM Inventory where owner in (SELECT inventory_business from InventoryHasProduct GROUP BY inventory_business HAVING SUM(count) = 0);
 -- End of solution
 END //
 DELIMITER ;
