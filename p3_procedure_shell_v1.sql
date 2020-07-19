@@ -399,7 +399,7 @@ BEGIN
     else
         -- there is an entry already
         declare amt int default 0;
-        select count 
+        select `count` 
         into amt
         from InventoryHasProduct
         where inventory_business = i_businessName
@@ -442,7 +442,7 @@ BEGIN
 -- Type solution below
     -- check if supplier has enough
     if (
-        select count
+        select `count`
         from InventoryHasProduct
         where product_id = i_productId
         and inventory_business = i_supplierName
