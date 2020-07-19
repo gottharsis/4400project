@@ -869,15 +869,19 @@ BEGIN
     INSERT INTO show_hospital_aggregate_usage_result
 -- Type solution below
 
-    with doctor_usage (doctor, hospital, doctor_use) as (
-        select Doctor.username as doctor, Doctor.hospital as hospital, sum(UsageLogEntry.count)
-        from Doctor join UsageLog on Doctor.username = UsageLog.doctor
-        join UsageLogEntry on UsageLogEntry.usage_log_id = UsageLog.id
-        group by Doctor.username, Doctor.hospital
-    )
-    select hospital, sum(doctor_use)
-    from doctor_usage 
-    group by hospital;
+    -- with doctor_usage as (
+    --     select Doctor.username as doctor, Doctor.hospital, sum(UsageLogEntry.count) as doctor_use
+    --     from Doctor join UsageLog on Doctor.username = UsageLog.doctor
+    --     join UsageLogEntry on UsageLogEntry.usage_log_id = UsageLog.id
+    --     group by Doctor.username, Doctor.hospital
+    -- )
+    -- select hospital, sum(doctor_use)
+    -- from doctor_usage 
+    -- group by hospital;
+    select Doctor.hospital, sum(UsageLogEntry.count)
+    from Doctor join UsageLog on Doctor.username = UsageLog.doctor
+    join UsageLogEntry on UsageLogEntry.usage_log_id = UsageLog.id
+    group by Doctor.hospital;
 
 -- End of solution
 END //
