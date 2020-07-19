@@ -72,8 +72,9 @@ CREATE PROCEDURE add_usage_log_entry(
 )
 BEGIN
 -- Type solution below
+declare hospitalname varchar(100);
+declare item_count int;
 if (select count(*) from UsageLog where id = i_usage_log_id) > 0 then
-    declare hospitalname varchar(100);
     select hospital
     into hospitalname 
     from Doctor
@@ -82,9 +83,7 @@ if (select count(*) from UsageLog where id = i_usage_log_id) > 0 then
         where id = i_usage_log_id
     );
 
-    declare item_count int;
-    select `count` from InventoryHasProduct 
-    into item_count
+    select `count` into item_count from InventoryHasProduct 
     where inventory_business = hospitalname
     and product_id = i_product_id;
 
@@ -125,13 +124,13 @@ CREATE PROCEDURE add_business(
 )
 BEGIN
 -- Type solution below
-    INSERT INTO Business(name, address_street, address_city, address_state, address_zip) VALUES (i_name, i_BusinessStreet, i_BusinessCity, i_BusinessState, i_BusinessZip)
-    INSERT INTO inventory(owner, address_street, address_city, address_state, address_zip) VALUES (i_name, i_InventoryStreet, i_InventoryCity, i_InventoryState, i_InventoryZip)
+    INSERT INTO Business(name, address_street, address_city, address_state, address_zip) VALUES (i_name, i_BusinessStreet, i_BusinessCity, i_BusinessState, i_BusinessZip);
+    INSERT INTO inventory(owner, address_street, address_city, address_state, address_zip) VALUES (i_name, i_InventoryStreet, i_InventoryCity, i_InventoryState, i_InventoryZip);
     IF(i_businessType = 'Hospital') THEN
-        INSERT INTO Hospital(name, max_doctors, budget) VALUES (i_name, i_maxDoctors, i_budget)
-    END IF
+        INSERT INTO Hospital(name, max_doctors, budget) VALUES (i_name, i_maxDoctors, i_budget);
+    END IF;
     IF (i_businessType = 'Manufacturer') THEN
-        INSERT INTO Manufacturer(name, catalog_capacity) VALUES (i_name, i_catalog_capacity)
+        INSERT INTO Manufacturer(name, catalog_capacity) VALUES (i_name, i_catalog_capacity);
     END IF;
     -- End of solution
 END //
@@ -157,51 +156,50 @@ END //
 DELIMITER ;
 
 -- Number: I5
--- Author: kachtani3@
+-- Author: anene6
 -- Name: add_transaction_item
 DROP PROCEDURE IF EXISTS add_transaction_item;
 DELIMITER //
 CREATE PROCEDURE add_transaction_item(
-    IN i_transactionId INT,
+    IN i_transactionId CHAR(4),
     IN i_productId CHAR(5),
     IN i_manufacturerName VARCHAR(100),
     IN i_purchaseCount INT)
 BEGIN
 -- Type solution below
-if (select count(*) from `Transaction` where id = i_transaction_id) > 0 then
-    declare hname varchar(100);
+declare hname varchar(100);
+declare hBudget float(2) default 0.0;
+declare manufcount int default 0;
+declare pprice float(2) default 0.0;
+declare cost double;
+if (select count(*) from `Transaction` where id = i_transactionId) > 0 then
     select hospital
     into hname
     from `Transaction`
     where id = i_transactionId;
 
-
-    declare hBudget int default 0;
     select budget 
     into hBudget
     from Hospital
     where `name` = hname;
 
-    declare manufcount int default 0;
     select `count`
     into manufcount
     from InventoryHasProduct
     where inventory_business = i_manufacturerName
     and product_id = i_productId;
     
-    declare pprice float(2) default 0.0;
     select price into pprice
     from CatalogItem
     where manufacturer = i_manufacturerName and product_id = i_productId;
 
-    declare cost double;
     set cost = pprice * i_purchaseCount;
 
     -- verify that manufacturer has the item (if not, then cost = 0) and 
     -- that total cost <= budget and manufacturer has enough items
-    if cost > 0 and manufcount <= i_purchaseCount and cost <= hBudget then
+    if cost > 0 and manufcount >= i_purchaseCount and cost <= hBudget then
         -- reduce budget
-        update Hospital set budget = hBudget - cost where name = hName;
+        update Hospital set budget = hBudget - cost where name = hname;
         
         -- increase hospital inventory
         if (select count(*) 
@@ -212,7 +210,7 @@ if (select count(*) from `Transaction` where id = i_transaction_id) > 0 then
             update InventoryHasProduct 
             set `count` = `count` + i_purchaseCount
             where inventory_business = hname
-            and product_id = i_productId) > 0 
+            and product_id = i_productId > 0;
         else
             insert into InventoryHasProduct
             values (hname, i_productId, i_purchaseCount);
@@ -223,6 +221,9 @@ if (select count(*) from `Transaction` where id = i_transaction_id) > 0 then
         set `count` = `count` - i_purchaseCount
         where product_id = i_productId
         and inventory_business = i_manufacturerName;
+        
+        insert into transactionitem
+        values (i_transactionId, i_manufacturerName, i_productId, i_purchaseCount);
 
     end if;
 end if;
@@ -247,12 +248,12 @@ CREATE PROCEDURE add_user(
 )
 BEGIN
 -- Type solution below
-    INSERT INTO User(username, email, password, fname, lname) VALUES (i_username, i_email, sha(i_password), i_fname, i_lname)
+    INSERT INTO User(username, email, password, fname, lname) VALUES (i_username, i_email, sha(i_password), i_fname, i_lname);
     IF (i_userType like '%Doctor%') THEN
-        INSERT INTO  Doctor(username, hospital, manager) VALUES(i_username, i_workingHospital, null)
-    END IF
+        INSERT INTO  Doctor(username, hospital, manager) VALUES(i_username, i_workingHospital, null);
+    END IF;
     IF (i_userType like '%Admin%')THEN
-        INSERT INTO Administrator(username, business) VALUES (i_username, i_managingBusiness)
+        INSERT INTO Administrator(username, business) VALUES (i_username, i_managingBusiness);
     END IF;
 -- End of solution
 END //
@@ -270,7 +271,7 @@ CREATE PROCEDURE add_catalog_item(
 )
 BEGIN
 -- Type solution below
-    INSERT into CatalogItem(manufacturer, product_id, price) VALUES (i_manufacturer_name, i_product_id, i_price);
+    INSERT into CatalogItem(manufacturer, product_id, price) VALUES (i_manufacturerName, i_product_id, i_price);
 -- End of solution
 END //
 DELIMITER ;
@@ -306,7 +307,7 @@ CREATE PROCEDURE delete_product(
 )
 BEGIN
 -- Type solution below
-DELETE * FROM PRODUCT where product_id = i_prod_id;
+DELETE FROM PRODUCT where product_id = i_prod_id;
 -- End of solution
 END //
 DELIMITER ;
@@ -319,7 +320,7 @@ DELIMITER //
 CREATE PROCEDURE delete_zero_inventory()
 BEGIN
 -- Type solution below
-DELETE * FROM Inventory where owner in (SELECT inventory_business from InventoryHasProduct GROUP BY inventory_business HAVING SUM(count) = 0);
+DELETE FROM Inventory where owner in (SELECT inventory_business from InventoryHasProduct GROUP BY inventory_business HAVING SUM(count) = 0);
 -- End of solution
 END //
 DELIMITER ;
@@ -349,7 +350,7 @@ CREATE PROCEDURE delete_user(
 )
 BEGIN
 -- Type solution below
-    DELETE * FROM User where username = i_username;
+    DELETE FROM User where username = i_username;
 -- End of solution
 END //
 DELIMITER ;	
@@ -365,7 +366,7 @@ CREATE PROCEDURE delete_catalog_item(
 )
 BEGIN
 -- Type solution below
-    DELETE * FROM CatalogItem where (manufacturer = i_manufacturer_name AND product_id = i_product_id);
+    DELETE FROM CatalogItem where (manufacturer = i_manufacturer_name AND product_id = i_product_id);
 -- End of solution
 END //
 DELIMITER ;
@@ -385,7 +386,7 @@ CREATE PROCEDURE add_subtract_inventory(
 )
 BEGIN
 -- Type solution below
-    
+    declare amt int default 0;
     -- if there is no entry in the table, add one
     if (
         select count(*) 
@@ -394,11 +395,10 @@ BEGIN
         and product_id = i_prod_id
     ) = 0 then 
         if i_delta > 0 then
-            insert into InventoryHasProduct values (i_businessName, i_prod_id, i_delta)
+            insert into InventoryHasProduct values (i_businessName, i_prod_id, i_delta);
         end if;
     else
         -- there is an entry already
-        declare amt int default 0;
         select count 
         into amt
         from InventoryHasProduct
@@ -588,7 +588,7 @@ END //
 DELIMITER ;
 
 -- Number: U9
--- Author: klin83@
+-- Author: vvangala3
 -- Name: batch_update_catalog_item
 DROP PROCEDURE IF EXISTS batch_update_catalog_item;
 DELIMITER //
@@ -597,7 +597,7 @@ CREATE PROCEDURE batch_update_catalog_item(
     IN i_factor FLOAT(2))
 BEGIN
 -- Type solution below
-
+Update CatalogItem SET price = price*i_factor where (manufacturer = i_manufacturer_name);
 -- End of solution
 END //
 DELIMITER ;
@@ -819,7 +819,7 @@ END //
 DELIMITER ;
 
 -- Number: S8
--- Author: klin83@
+-- Author: apara3
 -- Name: show_product_usage
 DROP PROCEDURE IF EXISTS show_product_usage;
 DELIMITER //
@@ -834,17 +834,28 @@ BEGIN
 
     INSERT INTO show_product_usage_result
 -- Type solution below
-	SELECT transactionitem.product_id, SUM(transactionitem.count) as num_used, 
-    SUM(inventoryhasproduct.count) as num_available, SUM(transactionitem.count)/SUM(inventoryhasproduct.count) as ratio  
-    FROM transactionitem
-    JOIN inventoryhasproduct ON transactionitem.product_id = inventoryhasproduct.product_id
-    GROUP BY transactionitem.product_id;
+	    SELECT used.id, IFNULL(num_used, 0) as num_used, IFNULL(num_available, 0) as num_available, ROUND(IFNULL(num_used/num_available, 0), 2) as ratio  FROM
+(SELECT id from product) as p1
+	LEFT OUTER JOIN
+(SELECT id, SUM(count) as num_available
+	FROM product
+    RIGHT OUTER JOIN inventoryhasproduct on inventoryhasproduct.product_id = product.id
+    WHERE inventory_business IN
+    (SELECT name from manufacturer)
+    GROUP BY id) as available ON available.id = p1.id
+	RIGHT OUTER JOIN
+(SELECT id, SUM(count) as num_used
+	FROM product LEFT OUTER JOIN usagelogentry
+    on product.id = usagelogentry.product_id
+    GROUP BY id) as used
+    ON used.id = available.id
+    ORDER BY id;
 -- End of solution
 END //
 DELIMITER ;
 
 -- Number: S9
--- Author: klin83@
+-- Author: apara3
 -- Name: show_hospital_aggregate_usage
 DROP PROCEDURE IF EXISTS show_hospital_aggregate_usage;
 DELIMITER //
@@ -923,10 +934,10 @@ BEGIN
 
     INSERT INTO manufacturer_transaction_report_result
 -- Type solution below
-    SELECT id, hospital, `date`, SUM(price * count) as cost, COUNT(count) as total_count
+    SELECT id, hospital, `date`, ROUND(SUM(price * count), 2) as cost, SUM(count) as total_count
     FROM transactionitem JOIN `transaction` ON transactionitem.transaction_id = `transaction`.id
-    JOIN catalogitem on catalogitem.product_id = transationitem.product_id and catalogitem.manufacturer = transactionitem.manufacturer
-    WHERE transactionitem.manufacturer = i_manufacturer
+    JOIN catalogitem on catalogitem.product_id = transactionitem.product_id and catalogitem.manufacturer = transactionitem.manufacturer
+    WHERE transactionitem.manufacturer = 'PPE Empire'
     GROUP BY id;
 -- End of solution
 END //
