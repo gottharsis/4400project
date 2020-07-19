@@ -868,11 +868,17 @@ BEGIN
 
     INSERT INTO show_hospital_aggregate_usage_result
 -- Type solution below
-	SELECT hospital, SUM(count)
-    FROM usagelog INNER JOIN usagelogentry
-    ON usagelog.id = usagelogentry.usage_log_id
-    INNER JOIN doctor on usagelog.doctor = doctor.username
-    GROUP BY hospital;
+
+    with doctor_usage (doctor, hospital, doctor_use) as (
+        select Doctor.username as doctor, Doctor.hospital as hospital, sum(UsageLogEntry.count)
+        from Doctor join UsageLog on Doctor.username = UsageLog.doctor
+        join UsageLogEntry on UsageLogEntry.usage_log_id = UsageLog.id
+        group by Doctor.username, Doctor.hospital
+    )
+    select hospital, sum(doctor_use)
+    from doctor_usage 
+    group by hospital;
+
 -- End of solution
 END //
 DELIMITER ;
